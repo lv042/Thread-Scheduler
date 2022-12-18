@@ -6,28 +6,34 @@ use std::thread;
 //Using Arc and Mutex together allows you to share a value between multiple threads in a safe and efficient way.
 //The Arc type enables multiple threads to hold a reference to the value, while the Mutex ensures that access to the value is properly synchronized.
 
-
 pub struct Task {
     pub id: u32,
     pub name: String,
-    pub closure: Box<dyn Fn() -> ()>,
+    pub closure: Box<dyn Fn() + Send + Sync + 'static>,
 }
 
 impl Task {
-    fn new(id: u32, name: String, closure: impl Fn() -> () + 'static) -> Task {
-        Task { id, 
+    fn new(id: u32, name: String, closure: impl Fn() + Send + Sync + 'static) -> Task {
+        Task { 
+            id, 
             name,
-            closure: Box::new(closure) }
+            closure: Box::new(closure) 
+        }
     }
 
     pub fn run(&self) {
         println!("Task {}:{} is running", self.name, self.id);
+
+        //run the closure in a new thread
+        //maybe limit the number of threads to the number of cores
         (self.closure)();
+        
         println!("Task {}:{} is finished", self.name, self.id);
     }
 }
 
-pub struct TaskManager{
+
+pub struct TaskManager {
     //makes the list accessible to multiple threads and protects the list from concurrent access
     pub start_time: std::time::Instant,
     pub list: Arc<Mutex<Vec<Task>>>,
@@ -45,12 +51,26 @@ impl TaskManager {
         list.push(task);
     }
 
-    pub fn create_task(&mut self, name: String, closure: impl Fn() -> () + 'static) {
+    pub fn create_task(&mut self, name: String, closure: impl Fn() -> () + Send + Sync + 'static) {
         //task id is the length of the list + 1
         let task = Task::new(self.list.lock().unwrap().len() as u32 + 1, name, closure);
         self.add_task(task);
-    }  
+    }
+
+    pub fn run_tasks(&self) {
+        let task_manager_list = self.list.clone();
+        let mut list = task_manager_list.lock().unwrap();
+
+        for task in list.iter() {
+            let task_closure = task.closure;
+            thread::spawn(move || {
+                task_closure();
+            });
+        }
+    }
 }
+
+
 
 
 fn main() {
@@ -62,8 +82,5 @@ fn main() {
         std::thread::sleep(std::time::Duration::from_secs(5));
     });
 
-    let task = Task::new(0, "task3".to_string(), || {
-        std::thread::sleep(std::time::Duration::from_secs(2));
-    });
-
+    //wait for all tasks to finish
 }
