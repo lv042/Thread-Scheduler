@@ -1,19 +1,22 @@
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-//The Arc type is used to share the value between threads, while the Mutex is used to protect access to the value.
-//The Mutex ensures that only one thread can access the value at a time, while the Arc enables multiple threads to hold a reference to the value.
-//Using Arc and Mutex together allows you to share a value between multiple threads in a safe and efficient way.
-//The Arc type enables multiple threads to hold a reference to the value, while the Mutex ensures that access to the value is properly synchronized.
+
 
 #[derive(Clone)]
 pub struct Task {
+    // This field stores the id of the task.
     pub id: u32,
+    // This field stores the name of the task.
     pub name: String,
+    // This field stores the closure that represents the task's work.
+    // The closure is stored in an Arc value, which allows it to be shared between threads.
     pub closure: Arc<dyn Fn() + Send + Sync + 'static>,
 }
 
 impl Task {
+    // This method creates a new Task instance with the given id, name, and closure.
+    // The closure is stored in an Arc value, which allows it to be shared between threads.
     fn new(id: u32, name: String, closure: impl Fn() + Send + Sync + 'static) -> Task {
         Task { 
             id, 
@@ -22,52 +25,68 @@ impl Task {
         }
     }
 
+    // This method runs the task's closure in a new thread.
+    // The task's name and id are printed before and after running the closure.
     pub fn run(self) {
-        
-
-        //maybe limit the number of threads to the number of cores
-        //run the closure in a new thread
+        // Create a new thread to run the closure in.
         let tr = thread::spawn(move || {
             println!("Task {}:{} is running", self.name, self.id);
             (self.closure)();
             println!("Task {}:{} is finished", self.name, self.id);
         });
-        
-        
-       
     }
-
 }
 
 
+
 pub struct TaskManager {
-    //makes the list accessible to multiple threads and protects the list from concurrent access
+    // This field stores the time when the TaskManager instance was created.
     pub start_time: std::time::Instant,
+    // This field stores a list of tasks managed by the TaskManager.
+    // The list is stored in an Arc value, which allows it to be shared between threads.
+    // The Mutex value protects the list from concurrent access.
     pub list: Arc<Mutex<Vec<Task>>>,
 }
 
 impl TaskManager {
+    // This method creates a new TaskManager instance.
     pub fn new() -> TaskManager {
         TaskManager {
+            // Store the current time as the start time of the TaskManager instance.
             start_time: std::time::Instant::now(),
+            // Initialize the list of tasks with an empty Vec value, wrapped in an Arc and Mutex.
             list: Arc::new(Mutex::new(Vec::new())),
         }
     }
+
+    // This method adds a task to the TaskManager's list of tasks.
     fn add_task(&mut self, task: Task) {
+        // Lock the list of tasks to ensure that no other threads can access it while we are modifying it.
         let mut list = self.list.lock().unwrap();
+        // Add the task to the list.
         list.push(task);
     }
 
+    // This method creates a new task with the given name and closure, and adds it to the TaskManager's list of tasks.
     pub fn create_task(&mut self, name: String, closure: impl Fn() -> () + Send + Sync + 'static) {
-        //task id is the length of the list + 1
-        let task = Task::new(self.list.lock().unwrap().len() as u32 + 1, name, closure);
+        // Calculate the id of the new task by taking the length of the list of tasks + 1.
+        let task_id = self.list.lock().unwrap().len() as u32 + 1;
+        // Create a new Task instance with the calculated id, name, and closure.
+        let task = Task::new(task_id, name, closure);
+        // Add the new task to the TaskManager's list of tasks.
         self.add_task(task);
     }
 
+    // This method iterates over the TaskManager's list of tasks and runs each task.
+
     pub fn run_tasks(&self) {
+        // Lock the list of tasks to ensure that no other threads can access it while we are iterating over it.
         let list = self.list.lock().unwrap();
+        // Iterate over the list of tasks.
         for task in list.iter() {
+            // Make a copy of the task to ensure that it does not move out of the list.
             let task_copy = (*task).clone();
+            // Run the task.
             task_copy.run();
         }
     }
@@ -79,10 +98,10 @@ impl TaskManager {
 
 fn main() {
     let mut task_manager = TaskManager::new();
-    task_manager.create_task("task1".to_string(), || {
+    task_manager.create_task("LongTimer".to_string(), || {
         std::thread::sleep(std::time::Duration::from_secs(10));
     });
-    task_manager.create_task("task2".to_string(), || {
+    task_manager.create_task("ShortTimer".to_string(), || {
         std::thread::sleep(std::time::Duration::from_secs(5));
     });
 
