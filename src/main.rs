@@ -6,10 +6,11 @@ use std::thread;
 //Using Arc and Mutex together allows you to share a value between multiple threads in a safe and efficient way.
 //The Arc type enables multiple threads to hold a reference to the value, while the Mutex ensures that access to the value is properly synchronized.
 
+#[derive(Clone)]
 pub struct Task {
     pub id: u32,
     pub name: String,
-    pub closure: Box<dyn Fn() + Send + Sync + 'static>,
+    pub closure: Arc<dyn Fn() + Send + Sync + 'static>,
 }
 
 impl Task {
@@ -17,19 +18,25 @@ impl Task {
         Task { 
             id, 
             name,
-            closure: Box::new(closure) 
+            closure: Arc::new(closure) 
         }
     }
 
-    pub fn run(&self) {
-        println!("Task {}:{} is running", self.name, self.id);
-
-        //run the closure in a new thread
-        //maybe limit the number of threads to the number of cores
-        (self.closure)();
+    pub fn run(self) {
         
-        println!("Task {}:{} is finished", self.name, self.id);
+
+        //maybe limit the number of threads to the number of cores
+        //run the closure in a new thread
+        let tr = thread::spawn(move || {
+            println!("Task {}:{} is running", self.name, self.id);
+            (self.closure)();
+            println!("Task {}:{} is finished", self.name, self.id);
+        });
+        
+        
+       
     }
+
 }
 
 
@@ -58,16 +65,13 @@ impl TaskManager {
     }
 
     pub fn run_tasks(&self) {
-        let task_manager_list = self.list.clone();
-        let mut list = task_manager_list.lock().unwrap();
-
+        let list = self.list.lock().unwrap();
         for task in list.iter() {
-            let task_closure = task.closure;
-            thread::spawn(move || {
-                task_closure();
-            });
+            let task_copy = (*task).clone();
+            task_copy.run();
         }
     }
+    
 }
 
 
@@ -82,5 +86,9 @@ fn main() {
         std::thread::sleep(std::time::Duration::from_secs(5));
     });
 
+    task_manager.run_tasks();
+
     //wait for all tasks to finish
+    std::thread::sleep(std::time::Duration::from_secs(30));
+    println!("All tasks finished")
 }
