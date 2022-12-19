@@ -1,5 +1,5 @@
 # Thread Scheduler
-The ThreadScheduler is a utility for scheduling and running Threads concurrently. It allows you to limit the number of threads that run at the same time to the number of logical cores on the machine, create and add Threads to the scheduler using a closure and Thread name, and run all Threads concurrently in their own threads.
+The Thread Scheduler is a utility for scheduling and running Threads concurrently. It allows you to limit the number of threads that run at the same time to the number of logical cores on the machine, create and add Threads to the scheduler using a closure and Thread name, and run all Threads concurrently in their own threads.
 
 
 
