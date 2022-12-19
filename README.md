@@ -6,7 +6,7 @@ The Thread Scheduler is a utility for scheduling and running Threads concurrentl
 ### Usage
 Here is an example of how you might use the ThreadScheduler to perform a set of Threads concurrently:
 
-```.rs
+```.rust
 use task_scheduler::TaskScheduler;
 
 fn main() {
