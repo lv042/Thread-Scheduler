@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-
+//@TODO: Limit the number of threads that can run at the same time to the number of logical cores on the machine.
 
 #[derive(Clone)]
 pub struct Task {
@@ -46,6 +46,10 @@ pub struct TaskManager {
     // The list is stored in an Arc value, which allows it to be shared between threads.
     // The Mutex value protects the list from concurrent access.
     pub list: Arc<Mutex<Vec<Task>>>,
+
+    pub max_threads: u32,
+
+    pub current_threads: u32,
 }
 
 impl TaskManager {
@@ -56,6 +60,10 @@ impl TaskManager {
             start_time: std::time::Instant::now(),
             // Initialize the list of tasks with an empty Vec value, wrapped in an Arc and Mutex.
             list: Arc::new(Mutex::new(Vec::new())),
+
+            max_threads: num_cpus::get() as u32,
+
+            current_threads: 0,
         }
     }
 
@@ -79,16 +87,26 @@ impl TaskManager {
 
     // This method iterates over the TaskManager's list of tasks and runs each task.
 
-    pub fn run_tasks(&self) {
+    pub fn run_tasks(&mut self) {
         // Lock the list of tasks to ensure that no other threads can access it while we are iterating over it.
         let list = self.list.lock().unwrap();
         // Iterate over the list of tasks.
         for task in list.iter() {
+            
+            if (self.current_threads >= self.max_threads) {
+                //wait for a thread to finish
+                std::thread::sleep(std::time::Duration::from_secs(1));
+                continue;
+            }
+
+
             // Make a copy of the task to ensure that it does not move out of the list.
             let task_copy = (*task).clone();
+            self.current_threads += 1;
             // Run the task.
             task_copy.run();
         }
+        
     }
     
 }
