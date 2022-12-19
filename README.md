@@ -1,10 +1,10 @@
-# Task Scheduler
-The TaskScheduler is a utility for scheduling and running tasks concurrently. It allows you to limit the number of threads that run at the same time to the number of logical cores on the machine, create and add tasks to the scheduler using a closure and task name, and run all tasks concurrently in their own threads.
+# Thread Scheduler
+The ThreadScheduler is a utility for scheduling and running Threads concurrently. It allows you to limit the number of threads that run at the same time to the number of logical cores on the machine, create and add Threads to the scheduler using a closure and Thread name, and run all Threads concurrently in their own threads.
 
 
 
 ### Usage
-Here is an example of how you might use the TaskScheduler to perform a set of tasks concurrently:
+Here is an example of how you might use the ThreadScheduler to perform a set of Threads concurrently:
 
 ```
 use task_scheduler::TaskScheduler;
@@ -36,10 +36,10 @@ fn main() {
 
 
 ### Limitations
-The TaskScheduler has the following limitations:
+The ThreadScheduler has the following limitations:
 
-It is not possible to retrieve the results of the tasks that are run.
-The tasks are run concurrently, but the order in which they are run is not guaranteed.
+It is not possible to retrieve the results of the Threads that are run.
+The Threads are run concurrently, but the order in which they are run is not guaranteed.
 
 ### License
 This project is licensed under the MIT License.
