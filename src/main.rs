@@ -39,7 +39,7 @@ impl Task {
 
 
 
-pub struct TaskManager {
+pub struct TaskScheduler {
     // This field stores the time when the TaskManager instance was created.
     pub start_time: std::time::Instant,
     // This field stores a list of tasks managed by the TaskManager.
@@ -52,10 +52,10 @@ pub struct TaskManager {
     pub current_threads: u32,
 }
 
-impl TaskManager {
+impl TaskScheduler {
     // This method creates a new TaskManager instance.
-    pub fn new() -> TaskManager {
-        TaskManager {
+    pub fn new() -> TaskScheduler {
+        TaskScheduler {
             // Store the current time as the start time of the TaskManager instance.
             start_time: std::time::Instant::now(),
             // Initialize the list of tasks with an empty Vec value, wrapped in an Arc and Mutex.
@@ -115,15 +115,15 @@ impl TaskManager {
 
 
 fn main() {
-    let mut task_manager = TaskManager::new();
-    task_manager.create_task("LongTimer".to_string(), || {
+    let mut task_scheduler = TaskScheduler::new();
+    task_scheduler.create_task("LongTimer".to_string(), || {
         std::thread::sleep(std::time::Duration::from_secs(10));
     });
-    task_manager.create_task("ShortTimer".to_string(), || {
+    task_scheduler.create_task("ShortTimer".to_string(), || {
         std::thread::sleep(std::time::Duration::from_secs(5));
     });
 
-    task_manager.run_tasks();
+    task_scheduler.run_tasks();
 
     //wait for all tasks to finish
     std::thread::sleep(std::time::Duration::from_secs(30));
